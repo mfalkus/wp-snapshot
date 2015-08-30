@@ -1,0 +1,27 @@
+# Snapshot WordPress Archiving Tool
+
+Create a usable, static copy of your WordPress website.
+
+This command is intended to be used for taking regular back-up snapshots of
+your website, perhaps via a cron. The interface is currently all command line
+based using the brilliant WP-CLI.
+
+To get started:
+
+    # Copy the config in to place and edit...
+    cp config-sample.php config.php
+    vim config.php
+
+    # Show all the URLs which will be saved
+    wp --require=/path/to/snap.php snap list
+
+    # Start archiving!
+    wp --require=/path/to/snap.php snap shot
+
+
+## Future Changes
+
+* Add capability to include year, month, date pages
+* Add capability to include pagination pages
+* Copy page resources (theme JS/CSS, images)
+* Rewrite local URLs to be usable on alternate backup site
