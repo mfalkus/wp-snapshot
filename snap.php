@@ -102,7 +102,7 @@ class Snap_Command extends WP_CLI_Command {
 
             $archive = get_post_type_archive_link($type);
             if ($archive) {
-                array_push($links, 'ARCHIVE' . $archive);
+                array_push($links, $archive);
             }
 
             $args = array(
@@ -110,12 +110,47 @@ class Snap_Command extends WP_CLI_Command {
                 'post_type'   => $type,
                 'post_status' => 'publish',
             ); 
+
+            $dates = array(); // only filled by the post type
             $posts = get_posts( $args );
             foreach ( $posts as $post ) {
                 array_push($links, get_permalink($post));
+
+                // Grab the year/month/day for all posts
+                if ($type == 'post') {
+                    $post_data = get_post($post);
+
+                    // Grab date pages also
+                    $date_parts = explode('-', substr($post_data->post_date,0,10));
+                    if (count($date_parts) !== 3) {
+                        continue;
+                    } else {
+                        list($year, $month, $date) = $date_parts;
+                    }
+
+                    if (!array_key_exists($year, $dates)) {
+                        $dates[$year] = array();
+                    }
+                    if (!array_key_exists($month, $dates[$year])) {
+                        $dates[$year][$month] = array();
+                    }
+                    if (!in_array($date, $dates[$year][$month])) {
+                        array_push($dates[$year][$month], $date);
+                    }
+                }
             }
 
-            // How to handle year/month/date links?
+            // Cycle through years/months/days and get appropriate links
+            foreach ($dates as $year => $months) {
+                array_push($links, get_year_link($year));
+                foreach ($months as $month => $dates) {
+                    array_push($links, get_month_link($year, $month));
+                    foreach ($dates as $date) {
+                        array_push($links, get_day_link($year, $month, $date));
+                    }
+                }
+            }
+
             // How to handle pagination...
         }
 
