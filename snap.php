@@ -39,10 +39,13 @@ class Snap_Command extends WP_CLI_Command {
         $links = Snap_Command::_list_all();
 
         $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // We want to get the respone
+
+        $success = 0;
         foreach ($links as $link) {
             curl_setopt($ch, CURLOPT_URL, $link);    // The url to get links from
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // We want to get the respone
             $result = curl_exec($ch);
+            // Check for success here
 
             // Setup directory if not exists
             $comps = parse_url($link);
@@ -53,14 +56,37 @@ class Snap_Command extends WP_CLI_Command {
             }
 
             $test = file_put_contents($output_path . 'index.html', $result);
+            if ($test !== FALSE) {
+                $success++;
+            } else {
+                print ("Unable to write to " . $output_path . "index.html\n");
+            }
         }
 
+        // Include the 404 template
+        curl_setopt($ch, CURLOPT_URL, get_bloginfo('url') . '?error=404');    // The url to get links from
+        $result = curl_exec($ch);
 
+        $output_path = TARGET_FOLDER . '/404/';
+        if (!file_exists($output_path)) {
+            mkdir($output_path, 0777, true);
+        }
+
+        $test = file_put_contents($output_path . 'index.html', $result);
+        if ($test !== FALSE) {
+            $success++;
+        } else {
+            print ("Unable to write to " . $output_path . "index.html\n");
+        }
+
+        WP_CLI::success( "Took a snapshot of " . $success . "/" . strval(count($links)+1) . " URLs for " . get_bloginfo('name') );
     }
 
     /**
      * Query WordPress for different post types, then loop to get each public
      * post and permalink.
+     *
+     * Doesn't include 'special' cases, i.e. 404 pages
      */
     private function _list_all() {
 
