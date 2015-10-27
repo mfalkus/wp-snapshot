@@ -66,6 +66,19 @@ class Snap_Command extends WP_CLI_Command {
                         }
                     }
                 } // end if match found
+
+                // Grab any CSS files
+                preg_match_all(
+                    '#<link[^>]+href\s*=\s*[\'"]?([^>\'"]+)[\'"]?[^>]*>#i',
+                    $result, $matches
+                );
+                if (isset($matches[1])) {
+                    foreach ($matches[1] as $url) {
+                        if (strpos($url, $site_url) !== false){
+                            array_push($site_resources, $url);
+                        }
+                    }
+                } // end if match found
             } // end if copying source
 
             if (REWRITE_LINKS) {

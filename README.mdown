@@ -24,4 +24,3 @@ To get started:
 * Add capability to include year, month, date pages
 * Add capability to include pagination pages
 * Copy page resources (theme JS/CSS, images)
-* Rewrite local URLs to be usable on alternate backup site
