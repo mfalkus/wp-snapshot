@@ -21,7 +21,7 @@ class Snap_Command extends WP_CLI_Command {
         $links = Snap_Command::_list_all();
 
         foreach ($links as $link) {
-            print $link . "\n";
+            print $link['url'] . " => " . $link['name'][0] . $link['name'][1] . "\n";
         }
 
         WP_CLI::success( "Finished listing for: " . get_bloginfo('name') );
@@ -37,46 +37,54 @@ class Snap_Command extends WP_CLI_Command {
      */
     function shot( $args, $assoc_args ) {
         $links = Snap_Command::_list_all();
+        $site_url = get_bloginfo('url');
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // We want to get the respone
 
         $success = 0;
-        foreach ($links as $link) {
+        $site_resources = array();
+        foreach ($links as $link_and_name) {
+            $link = $link_and_name['url'];
+
             curl_setopt($ch, CURLOPT_URL, $link);    // The url to get links from
             $result = curl_exec($ch);
-            // Check for success here
 
-            // Setup directory if not exists
-            $comps = parse_url($link);
-            $path = $comps['path'];
-            $output_path = TARGET_FOLDER . $path;
-            if (!file_exists($output_path)) {
-                mkdir($output_path, 0777, true);
-            }
+            if (COPY_SRC) {
+                print "Scanning: $link\n";
+                // grab any site_resources links (src="\w+" effectively) We'll
+                // handle whether they are appropriate to copy as part of the
+                // snapshot later
+                preg_match_all(
+                    '#<[^>]+src\s*=\s*[\'"]?([^>\'"]+)[\'"]?[^>]*>#i',
+                    $result, $matches
+                );
+                if (isset($matches[1])) {
+                    foreach ($matches[1] as $url) {
+                        if (strpos($url, $site_url) !== false){
+                            array_push($site_resources, $url);
+                        }
+                    }
+                } // end if match found
+            } // end if copying source
 
-            $test = file_put_contents($output_path . 'index.html', $result);
-            if ($test !== FALSE) {
+            if ($this::_save_file($result, $link_and_name['name'])) {
                 $success++;
-            } else {
-                print ("Unable to write to " . $output_path . "index.html\n");
             }
         }
 
-        // Include the 404 template
-        curl_setopt($ch, CURLOPT_URL, get_bloginfo('url') . '?error=404');    // The url to get links from
-        $result = curl_exec($ch);
+        if (COPY_SRC) {
+            // Ensure we only have unique resource URLs to grab. It's likely
+            // that a header image or similar will have been included for every
+            // URL accessed
+            $site_resources = array_unique($site_resources);
 
-        $output_path = TARGET_FOLDER . '/404/';
-        if (!file_exists($output_path)) {
-            mkdir($output_path, 0777, true);
-        }
-
-        $test = file_put_contents($output_path . 'index.html', $result);
-        if ($test !== FALSE) {
-            $success++;
-        } else {
-            print ("Unable to write to " . $output_path . "index.html\n");
+            foreach ($site_resources as $r) {
+                print "Found resource: $r\n";
+                curl_setopt($ch, CURLOPT_URL, $r);    // The url to get links from
+                $result = curl_exec($ch);
+                $this::_save_file($result, $this::_generate_local_name($r));
+            }
         }
 
         WP_CLI::success( "Took a snapshot of " . $success . "/" . strval(count($links)+1) . " URLs for " . get_bloginfo('name') );
@@ -86,7 +94,8 @@ class Snap_Command extends WP_CLI_Command {
      * Query WordPress for different post types, then loop to get each public
      * post and permalink.
      *
-     * Doesn't include 'special' cases, i.e. 404 pages
+     * Returns an array which has an array of 'url' to 'rewrite', where rewrite
+     * is the local directory and file path (excluding the prefix set in the config)
      */
     private function _list_all() {
 
@@ -154,7 +163,67 @@ class Snap_Command extends WP_CLI_Command {
             // How to handle pagination...
         }
 
+        // each $links entry so far needs a standard rewrite...
+        for ($i = 0; $i < count($links); $i++) {
+            $links[$i] = array(
+                'url'   => $links[$i],
+                'name'  => $this::_generate_local_name($links[$i]),
+            );
+        }
+
+        // Include the 404 template
+        array_push($links, array(
+            'url'   => get_bloginfo('url') . '?error=404',
+            'name'  => array('/404/', 'index.html')
+        ));
+
         return $links;
+    }
+
+    /**
+     * Save the given contents to the directory and the filename supplied.
+     * This will create the folder if required.
+     *
+     * Returns true if successfully, false otherwise.
+     */
+    private function _save_file($contents, $dir_and_name) {
+        $dir = $dir_and_name[0];
+        $name = $dir_and_name[1];
+
+        $output_path = TARGET_FOLDER . $dir;
+        if (!file_exists($output_path)) {
+            mkdir($output_path, 0777, true);
+        }
+
+        $output_path = TARGET_FOLDER . $dir . '/' . $name;
+        $test = file_put_contents($output_path, $contents);
+        if ($test !== FALSE) {
+            return 1;
+        } else {
+            print ("Unable to write to " . $output_path . "\n");
+            return 0;
+        }
+    }
+
+    /**
+     * Given a URL what is the path and filename we want to save this as
+     * locally. This is useful for '/my-blog-post/' links which will become
+     * '/my-blog-post/index.html' on the local disk.
+     *
+     * Returns an array containing first the directory then the filename.
+     */
+    private function _generate_local_name($url) {
+        $comps = parse_url($url);
+        $path   = $comps['path'];
+        $dir    = $path;
+        $name   = 'index.html';
+
+        if (substr($path, -1) != '/') {
+            $dir    = dirname($path) . '/';
+            $name   = basename($path);
+        }
+
+        return array($dir, $name);
     }
 }
 
