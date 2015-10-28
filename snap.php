@@ -100,6 +100,29 @@ class Snap_Command extends WP_CLI_Command {
                 print "Found resource: $r\n";
                 curl_setopt($ch, CURLOPT_URL, $r);    // The url to get links from
                 $result = curl_exec($ch);
+
+                if (preg_match('/\.css(\?.*)?$/i', $r)) {
+                    $css_resources = array();
+                    // Try grab images from a CSS file
+                    print "Deep CSS checking\n";
+                    preg_match_all(
+                        '#:\s*url\s*\(\s*[\'"]?([^\)\'"]+)[\'"]?\s*\)#i',
+                        $result, $matches
+                    );
+                    if (isset($matches[1])) {
+                        foreach ($matches[1] as $url) {
+                            array_push($css_resources, $url);
+                        }
+                    } // end if match found
+
+                    foreach ($css_resources as $r) {
+                        print "Found CSS resource: $r\n";
+                        curl_setopt($ch, CURLOPT_URL, $r);    // The url to get links from
+                        $result = curl_exec($ch);
+                        $this::_save_file($result, $this::_generate_local_css_name($r, $url));
+                    }
+                }
+
                 $this::_save_file($result, $this::_generate_local_name($r));
             }
         }
@@ -241,6 +264,25 @@ class Snap_Command extends WP_CLI_Command {
         }
 
         return array($dir, $name);
+    }
+
+    private function _generate_local_css_name($url, $from) {
+
+        // if URL is full URL, just return
+        if (preg_match('/^https?:/i', $url)) {
+            return _generate_local_name($url);
+        }
+        if (preg_match('#^//#', $url)) {
+            return _generate_local_name('http:' . $url);
+        }
+        if (preg_match('#^/[^/]#', $url)) {
+            return _generate_local_name(get_bloginfo('url') . $url);
+        }
+
+        // Otherwise it's relative directory from the location of $from...
+        $dir = $from . $url;
+        $last = strrchr($dir, '/');
+        return array(substr($dir, 0, $last), substr($dir, $last));
     }
 }
 
