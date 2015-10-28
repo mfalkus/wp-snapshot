@@ -1,12 +1,17 @@
 <?php
 
-// Grab our config file...
 require_once('./config.php');
+require_once('./lib/UrlHandler.php');
 
 /**
  * Grab a snapshot of this WordPress blog.
  */
 class Snap_Command extends WP_CLI_Command {
+
+    public $uh;
+    function Snap_Command() {
+        $this->uh = new UrlHandler(get_bloginfo('url'), TARGET_FOLDER);
+    }
 
     /**
      * List blog URLs
@@ -85,7 +90,7 @@ class Snap_Command extends WP_CLI_Command {
                 $result = str_ireplace(SRC_OLD, SRC_TO, $result);
             }
 
-            if ($this::_save_file($result, $link_and_name['name'])) {
+            if ($this->uh->save_file($result, $link_and_name['name'])) {
                 $success++;
             }
         }
@@ -119,11 +124,11 @@ class Snap_Command extends WP_CLI_Command {
                         print "Found CSS resource: $r\n";
                         curl_setopt($ch, CURLOPT_URL, $r);    // The url to get links from
                         $result = curl_exec($ch);
-                        $this::_save_file($result, $this::_generate_local_css_name($r, $url));
+                        $this->uh->save_file($result, $this->uh->generate_local_css_name($r, $url));
                     }
                 }
 
-                $this::_save_file($result, $this::_generate_local_name($r));
+                $this->uh->_save_file($result, $this->uh->generate_local_name($r));
             }
         }
 
@@ -207,7 +212,7 @@ class Snap_Command extends WP_CLI_Command {
         for ($i = 0; $i < count($links); $i++) {
             $links[$i] = array(
                 'url'   => $links[$i],
-                'name'  => $this::_generate_local_name($links[$i]),
+                'name'  => $this->uh->generate_local_name($links[$i]),
             );
         }
 
@@ -220,70 +225,6 @@ class Snap_Command extends WP_CLI_Command {
         return $links;
     }
 
-    /**
-     * Save the given contents to the directory and the filename supplied.
-     * This will create the folder if required.
-     *
-     * Returns true if successfully, false otherwise.
-     */
-    private function _save_file($contents, $dir_and_name) {
-        $dir = $dir_and_name[0];
-        $name = $dir_and_name[1];
-
-        $output_path = TARGET_FOLDER . $dir;
-        if (!file_exists($output_path)) {
-            mkdir($output_path, 0777, true);
-        }
-
-        $output_path = TARGET_FOLDER . $dir . '/' . $name;
-        $test = file_put_contents($output_path, $contents);
-        if ($test !== FALSE) {
-            return 1;
-        } else {
-            print ("Unable to write to " . $output_path . "\n");
-            return 0;
-        }
-    }
-
-    /**
-     * Given a URL what is the path and filename we want to save this as
-     * locally. This is useful for '/my-blog-post/' links which will become
-     * '/my-blog-post/index.html' on the local disk.
-     *
-     * Returns an array containing first the directory then the filename.
-     */
-    private function _generate_local_name($url) {
-        $comps = parse_url($url);
-        $path   = $comps['path'];
-        $dir    = $path;
-        $name   = 'index.html';
-
-        if (substr($path, -1) != '/') {
-            $dir    = dirname($path) . '/';
-            $name   = basename($path);
-        }
-
-        return array($dir, $name);
-    }
-
-    private function _generate_local_css_name($url, $from) {
-
-        // if URL is full URL, just return
-        if (preg_match('/^https?:/i', $url)) {
-            return _generate_local_name($url);
-        }
-        if (preg_match('#^//#', $url)) {
-            return _generate_local_name('http:' . $url);
-        }
-        if (preg_match('#^/[^/]#', $url)) {
-            return _generate_local_name(get_bloginfo('url') . $url);
-        }
-
-        // Otherwise it's relative directory from the location of $from...
-        $dir = $from . $url;
-        $last = strrchr($dir, '/');
-        return array(substr($dir, 0, $last), substr($dir, $last));
-    }
 }
 
 WP_CLI::add_command( 'snap', 'Snap_Command' );
