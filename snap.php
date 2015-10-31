@@ -10,7 +10,7 @@ class Snap_Command extends WP_CLI_Command {
 
     public $uh;
     function Snap_Command() {
-        $this->uh = new UrlHandler(get_bloginfo('url'), TARGET_FOLDER);
+        $this->uh = new \wpsnapshot\UrlHandler(get_bloginfo('url'), TARGET_FOLDER);
     }
 
     /**
@@ -124,11 +124,11 @@ class Snap_Command extends WP_CLI_Command {
                         print "Found CSS resource: $r\n";
                         curl_setopt($ch, CURLOPT_URL, $r);    // The url to get links from
                         $result = curl_exec($ch);
-                        $this->uh->save_file($result, $this->uh->generate_local_css_name($r, $url));
+                        $this->uh->save_file($result, $this->uh->generate_local_name_rel($r, $url));
                     }
                 }
 
-                $this->uh->_save_file($result, $this->uh->generate_local_name($r));
+                $this->uh->save_file($result, $this->uh->generate_local_name($r));
             }
         }
 

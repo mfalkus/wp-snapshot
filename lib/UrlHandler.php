@@ -1,4 +1,6 @@
 <?php
+namespace wpsnapshot;
+
 class UrlHandler {
 
     public $blogurl = '';
@@ -54,13 +56,21 @@ class UrlHandler {
         return array($dir, $name);
     }
 
-    public function generate_local_css_name($url, $from) {
+    /**
+     * Given a relative URL what is the path and filename we want to save this
+     * as locally. This is intended to be used to fetch CSS resources, so the
+     * supplied $from parameter is the point at which relative URLs are
+     * handled.
+     *
+     * Returns an array containing first the directory then the filename.
+     */
+    public function generate_local_name_rel($url, $from) {
 
         // if URL is full URL, just return
         if (preg_match('/^https?:/i', $url)) {
             return $this->generate_local_name($url);
         }
-        if (preg_match('#^//#', $url)) {
+        if (preg_match('#^//[^/]#', $url)) {
             return $this->generate_local_name('http:' . $url);
         }
         if (preg_match('#^/[^/]#', $url)) {
@@ -68,8 +78,17 @@ class UrlHandler {
         }
 
         // Otherwise it's relative directory from the location of $from...
-        $dir = $from . $url;
-        $last = strrchr($dir, '/');
-        return array(substr($dir, 0, $last), substr($dir, $last));
+        $comps  = parse_url($from);
+        $path   = $comps['path'];
+
+        // Join path from $from (exc css filename) with $url
+        $last_slash_pos = strrpos($path, '/') + 1;
+        $dir            = substr($path, 0, $last_slash_pos) . $url;
+
+        $dir = preg_replace('#(.*?)(\.\/)*(.*?)#', "$1$3", $dir);
+
+        // Split return path into dir path and resource name
+        $last_slash_pos = strrpos($dir, '/') + 1;
+        return array(substr($dir, 0, $last_slash_pos), substr($dir, $last_slash_pos));
     }
 }
