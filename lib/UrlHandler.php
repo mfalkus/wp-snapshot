@@ -5,7 +5,7 @@ class UrlHandler {
 
     public $blogurl = '';
     public $output_base = '';
-    function UrlHandler($blogurl, $output_base) {
+    function __construct($blogurl, $output_base) {
         $this->blogurl = $blogurl;
         $this->output_base = $output_base;
     }
