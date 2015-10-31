@@ -1,11 +1,15 @@
 <?php
 include_once('lib/UrlHandler.php');
 
+define('FAKE_CONTENTS',     'testing');
+define('TEST_WP_URL',       'http://test-it.com');
+define('TEST_OUTPUT_DIR',   './tests/tmp-output');
+
 class SnapShotTest extends PHPUnit_Framework_TestCase {
 
     public $uh;
     function SnapShotTest() {
-        $this->uh = new \wpsnapshot\UrlHandler('http://test-it.com', './test-tmp');
+        $this->uh = new \wpsnapshot\UrlHandler(TEST_WP_URL, TEST_OUTPUT_DIR);
     }
 
     function test_generate_local_name() {
@@ -51,7 +55,65 @@ class SnapShotTest extends PHPUnit_Framework_TestCase {
     }
 
     function test_save_file() {
-        $this->assertTrue(true);
+        $test = '/web-root/my-blog-post/';
+        $out_test = $test . 'index.html';
+        $dir_and_name = $this->uh->generate_local_name($test);
+
+        // Write out a file
+        $ok = $this->uh->save_file('FAKE_CONTENTS', $dir_and_name);
+
+        // FALSE would be a failure
+        $this->assertTrue($ok !== FALSE);
+
+        // Is the content the same? Read back file and check
+        $actual_file = file_get_contents(TEST_OUTPUT_DIR . $out_test);
+        $this->assertEquals($actual_file, 'FAKE_CONTENTS');
+
+
+        $test = '/web-root/images/photo.jpg';
+        $out_test =  $test;
+        $dir_and_name = $this->uh->generate_local_name($test);
+
+        // Write out a file
+        $ok = $this->uh->save_file('FAKE_CONTENTS', $dir_and_name);
+
+        // FALSE would be a failure
+        $this->assertTrue($ok !== FALSE);
+
+        // Is the content the same? Read back file and check
+        $actual_file = file_get_contents(TEST_OUTPUT_DIR . $out_test);
+        $this->assertEquals($actual_file, 'FAKE_CONTENTS');
+
+
+
+        $test = '/web-root/images/../photo-in-root.jpg';
+        $out_test =  $test;
+        $dir_and_name = $this->uh->generate_local_name($test);
+
+        // Write out a file
+        $ok = $this->uh->save_file('FAKE_CONTENTS', $dir_and_name);
+
+        // FALSE would be a failure
+        $this->assertTrue($ok !== FALSE);
+
+        // Is the content the same? Read back file and check
+        $actual_file = file_get_contents(TEST_OUTPUT_DIR . $out_test);
+        $this->assertEquals($actual_file, 'FAKE_CONTENTS');
+
+
+        $test = '/web-root/images/././././photo-not-in-root.jpg';
+        $out_test =  $test;
+        $dir_and_name = $this->uh->generate_local_name($test);
+
+        // Write out a file
+        $ok = $this->uh->save_file('FAKE_CONTENTS', $dir_and_name);
+
+        // FALSE would be a failure
+        $this->assertTrue($ok !== FALSE);
+
+        // Is the content the same? Read back file and check
+        $actual_file = file_get_contents(TEST_OUTPUT_DIR . $out_test);
+        $this->assertEquals($actual_file, 'FAKE_CONTENTS');
     }
 }
 
