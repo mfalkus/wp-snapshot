@@ -87,7 +87,7 @@ class Snap_Command extends WP_CLI_Command {
             } // end if copying source
 
             if (REWRITE_LINKS) {
-                $result = str_ireplace(SRC_OLD, SRC_TO, $result);
+                $result = str_ireplace(SRC_OLD, SRC_NEW, $result);
             }
 
             if ($this->uh->save_file($result, $link_and_name['name'])) {

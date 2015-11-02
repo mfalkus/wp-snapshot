@@ -1,10 +1,21 @@
-# Snapshot WordPress Archiving Tool
+# WP-Snapshot
 
-Create a usable, static copy of your WordPress website.
+**A WordPress Archiving Tool**
 
-This command is intended to be used for taking regular back-up snapshots of
-your website, perhaps via a cron. The interface is currently all command line
-based using the brilliant WP-CLI.
+[![Build Status](https://travis-ci.org/mfalkus/wp-snapshot.svg?branch=master)](https://travis-ci.org/mfalkus/wp-snapshot)
+
+Create a usable, static copy of your WordPress website for backup/archive or
+live use.
+
+This plugin for WP-CLI allows a back-up snapshots of your WordPress website to
+be created. These are copies which can actually be served on a webserver
+straight away --- they are simply flat HTML files and the resources used by
+those pages.  Although not as flexible as taking a backup copy of the PHP files
+and database of your site it does allow a backup copy of your website to be
+ready to go straight away on any hosting solution which can serve static files.
+
+The interface is currently all command line based using the brilliant WP-CLI.
+For recurring backup usage `cron` is your friend.
 
 To get started:
 
@@ -18,9 +29,21 @@ To get started:
     # Start archiving!
     wp --require=/path/to/snap.php snap shot
 
+The main options of interest are `COPY_SRC` and `REWRITE_LINKS`:
 
-## Future Changes
+`COPY_SRC` will capture the relevant source files for each page to be displayed
+correctly. That is all relevant images, CSS and JS files which are hosted on
+the same hostname as the WordPress installation uses. On a high-level, this
+effectively runs a capturing regex over the source HTML looking for `src`
+attributes with the correct hostname, so it isn't strictly limited to
+particular types of files.
 
-* Add capability to include year, month, date pages
-* Add capability to include pagination pages
-* Copy page resources (theme JS/CSS, images)
+`REWRITE_LINKS` can be used to rewrite all references to the WordPress
+installation hostname to another hostname. For example, `my-site.com/blog/...`
+links become `backup.my-site.com/blog/...` to host a recent backup which is
+browsable with working links.
+
+
+## Known Issues
+
+Pagination pages are not currently correctly.
