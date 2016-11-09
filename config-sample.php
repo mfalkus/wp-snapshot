@@ -22,10 +22,10 @@ define('TARGET_FOLDER', './tmp');
 define('COPY_SRC',      '1');
 
 /*
- * Rewrite all references (in `href` attributes) from SRC_OLD to SRC_NEW.
+ * Rewrite all references (in `href` attributes) from SRC_OLD to SRC_TO.
  * Useful for making a copy of your WordPress site which can be hosted
  * somewhere else straight away concurrently with your live site.
  */
 define('REWRITE_LINKS', '1');
 define('SRC_OLD',       'http://my-wordpress-site.com');
-define('SRC_NEW',       'http://backup.my-wordpress-site.com');
+define('SRC_TO',       'http://backup.my-wordpress-site.com');

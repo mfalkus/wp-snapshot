@@ -7,12 +7,12 @@
 Create a usable, static copy of your WordPress website for backup/archive or
 live use.
 
-This plugin for WP-CLI allows a back-up snapshots of your WordPress website to
+This plugin for WP-CLI allows back-up snapshots of your WordPress website to
 be created. These are copies which can actually be served on a webserver
 straight away --- they are simply flat HTML files and the resources used by
 those pages.  Although not as flexible as taking a backup copy of the PHP files
 and database of your site it does allow a backup copy of your website to be
-ready to go straight away on any hosting solution which can serve static files.
+ready to go instantly, on any hosting solution which can serve static files.
 
 The interface is currently all command line based using the brilliant WP-CLI.
 For recurring backup usage `cron` is your friend.
@@ -33,12 +33,12 @@ The main options of interest are `COPY_SRC` and `REWRITE_LINKS`:
 
 `COPY_SRC` will capture the relevant source files for each page to be displayed
 correctly. That is all relevant images, CSS and JS files which are hosted on
-the same hostname as the WordPress installation uses. On a high-level, this
+the same hostname as the WordPress installation uses. This
 effectively runs a capturing regex over the source HTML looking for `src`
 attributes with the correct hostname, so it isn't strictly limited to
 particular types of files.
 
-`REWRITE_LINKS` can be used to rewrite all references to the WordPress
+`REWRITE_LINKS` can be used to rewrite all references from the WordPress
 installation hostname to another hostname. For example, `my-site.com/blog/...`
 links become `backup.my-site.com/blog/...` to host a recent backup which is
 browsable with working links.
@@ -46,4 +46,4 @@ browsable with working links.
 
 ## Known Issues
 
-Pagination pages are not currently correctly.
+Pagination pages are not currently handled correctly.
