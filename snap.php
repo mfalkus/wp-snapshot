@@ -131,7 +131,9 @@ class Snap_Command extends WP_CLI_Command {
                     );
                     if (isset($matches[1])) {
                         foreach ($matches[1] as $url) {
-                            array_push($css_resources, $url);
+                            if (!preg_match('/data:/', $url) && !preg_match('/base64/', $url)) {
+                                array_push($css_resources, $url);
+                            }
                         }
                     } // end if match found
 
