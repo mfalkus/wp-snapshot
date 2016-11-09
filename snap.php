@@ -34,6 +34,11 @@ class Snap_Command extends WP_CLI_Command {
 
     /**
      * Create an archive/copy of all blog URLs as shown using snap list
+     *
+     * ## OPTIONS
+     *
+     * [<url>]
+     * : Optional URL to process instead of using output from list
      * 
      * ## EXAMPLES
      * 
@@ -41,7 +46,17 @@ class Snap_Command extends WP_CLI_Command {
      *
      */
     function shot( $args, $assoc_args ) {
-        $links = Snap_Command::_list_all();
+        $url = isset($args[0]) ? $args[0] : FALSE;
+        if ($url) {
+            $links = array(
+                array(
+                    'url'   => $url,
+                    'name'  => array('SINGLE/', 'index.html'),
+                )
+            );
+        } else {
+            $links = Snap_Command::_list_all();
+        }
         $site_url = get_bloginfo('url');
 
         $ch = curl_init();
